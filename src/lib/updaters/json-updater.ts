@@ -1,6 +1,6 @@
 import detectIndent from 'detect-indent';
 import { BaseUpdater } from './base-updater';
-import { JSONUpdaterContext, TSUpdaterPlugin } from '../common-types';
+import { JSONUpdaterContext, JSONUpdaterPlugin } from '../common-types';
 
 export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterContext {
 
@@ -10,7 +10,7 @@ export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterConte
 
     protected indent: string;
 
-    constructor(plugins: TSUpdaterPlugin[]) {
+    constructor(plugins: JSONUpdaterPlugin[]) {
         super(plugins);
         this.indent = '    ';
     }

@@ -1,4 +1,4 @@
-import { promiseTimeout } from '../utils';
+import { promiseTimeout, readDirRecursive } from '../utils';
 import { FileUpdater, UpdaterPlugin } from '../common-types';
 
 export abstract class BaseUpdater<NodeType> implements FileUpdater {
