@@ -40,7 +40,7 @@ export class ProjectUpdater extends Subject<UpdateEvent> {
             for (let updater of this.updaters) {
                 if (updater.supports(path)) {
                     await promiseTimeout(15);
-                    result = await updater.update(src, path);
+                    result = await updater.update(src, absPath);
                 }
             }
             if (this.isCanceled) {
@@ -74,6 +74,7 @@ export class ProjectUpdater extends Subject<UpdateEvent> {
 
     async writeChanges(): Promise<void> {
         for (const file of this.changedFiles) {
+            await promiseTimeout(10);
             await writeFile(file.absPath, file.content);
         }
     }

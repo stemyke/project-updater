@@ -21,6 +21,6 @@ export class TSUpdater extends BaseUpdater<SourceFile> implements TSUpdaterConte
     }
 
     protected convertFromNode(node: SourceFile): string {
-        return node.getText();
+        return node.getText(true);
     }
 }

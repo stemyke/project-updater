@@ -13,10 +13,15 @@ export class HTMLUpdater extends BaseUpdater<HTMLElement> implements HTMLUpdater
     }
 
     protected convertToNode(src: string): HTMLElement {
-        return parse(`<div>${src}</div>`);
+        return parse(src, {
+            comment: true,
+            voidTag: {
+                closingSlash: true
+            }
+        });
     }
 
     protected convertFromNode(node: HTMLElement): string {
-        return node.outerHTML;
+        return node.innerHTML;
     }
 }

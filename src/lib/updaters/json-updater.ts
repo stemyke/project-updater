@@ -1,6 +1,8 @@
+import { EOL } from 'os';
 import detectIndent from 'detect-indent';
 import { BaseUpdater } from './base-updater';
 import { JSONUpdaterContext, JSONUpdaterPlugin } from '../common-types';
+import { getEOL } from '../utils';
 
 export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterContext {
 
@@ -9,10 +11,12 @@ export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterConte
     }
 
     protected indent: string;
+    protected eol: string;
 
     constructor(plugins: JSONUpdaterPlugin[]) {
         super(plugins);
         this.indent = '    ';
+        this.eol = EOL;
     }
 
     protected extension(): string {
@@ -21,10 +25,12 @@ export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterConte
 
     protected convertToNode(src: string): Object {
         this.indent = detectIndent(src).indent || this.indent;
+        this.eol = getEOL(src);
         return JSON.parse(src);
     }
 
     protected convertFromNode(node: Object): string {
-        return JSON.stringify(node, undefined, this.indent);
+        return JSON.stringify(node, undefined, this.indent)
+            .replace(/\n/g, this.eol) + this.eol;
     }
 }
