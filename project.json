@@ -11,7 +11,7 @@
                 "{options.outputPath}"
             ],
             "options": {
-                "outputPath": "dist/project-updater",
+                "outputPath": "dist",
                 "tsConfig": "./tsconfig.lib.json",
                 "main": "./src/index.ts",
                 "format": ["esm", "cjs"],
