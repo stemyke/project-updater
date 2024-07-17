@@ -3,8 +3,10 @@ import { FileUpdater, UpdaterPlugin } from '../common-types';
 
 export abstract class BaseUpdater<NodeType> implements FileUpdater {
 
-    protected constructor(protected plugins: UpdaterPlugin<NodeType>[]) {
+    protected plugins: UpdaterPlugin<NodeType>[];
 
+    protected constructor(plugins: UpdaterPlugin<NodeType>[]) {
+        this.plugins = plugins.map(p => p.bind(this));
     }
 
     supports(path: string): boolean {
@@ -15,7 +17,7 @@ export abstract class BaseUpdater<NodeType> implements FileUpdater {
         let node = this.convertToNode(src, path);
         for (const plugin of this.plugins) {
             await promiseTimeout(5);
-            const result = plugin.call(this, node, path);
+            const result = plugin(node, path);
             if (result === null) {
                 return '';
             }
