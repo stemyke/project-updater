@@ -1,7 +1,5 @@
 export * from './lib/project-updater';
-export { readDirRecursive } from './lib/utils';
-
-export { ChangedFile } from './lib/common-types';
-export { UpdateEvent } from './lib/common-types';
-export { UpdateFileEvent } from './lib/common-types';
-export { UpdateProgressEvent } from './lib/common-types';
+export * from './lib/updaters/html-updater';
+export * from './lib/updaters/json-updater';
+export * from './lib/updaters/ts-updater';
+export * from './lib/common-types';

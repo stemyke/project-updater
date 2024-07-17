@@ -12,6 +12,10 @@ export class TSUpdater extends BaseUpdater<SourceFile> implements TSUpdaterConte
         });
     }
 
+    protected extension(): string {
+        return '.ts';
+    }
+
     protected convertToNode(_: string, path: string): SourceFile {
         return this.project.addSourceFileAtPath(path);
     }
