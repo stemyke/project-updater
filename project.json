@@ -15,7 +15,7 @@
                 "tsConfig": "./tsconfig.lib.json",
                 "main": "./src/index.ts",
                 "format": ["esm", "cjs"],
-                "generateExportsField": true,
+                "generateExportsField": true
             }
         },
         "lint": {
