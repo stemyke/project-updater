@@ -1,62 +1,22 @@
-import { readdir, readFile, writeFile, stat } from 'fs/promises';
-import { statSync } from 'fs';
-import { join, resolve } from 'path';
+import { readFile, writeFile } from 'fs/promises';
+import { existsSync, statSync } from 'fs';
+import { resolve } from 'path';
 import { diffLines, formatLines } from 'unidiff';
 import { Subject } from 'rxjs';
-import { TsUpdater } from './ts-updater';
-import { promiseTimeout } from './utils';
-import { existsSync } from 'node:fs';
-
-async function readDirRecursive(dir: string): Promise<string[]> {
-    if (dir.endsWith('node_modules')) {
-        return [];
-    }
-    const files = await readdir(dir);
-    const result: string[] = [];
-    for (const file of files) {
-        const path = join(dir, file);
-        const fileStat = await stat(path);
-        if (fileStat.isDirectory()) {
-            result.push(...(await readDirRecursive(path)));
-        } else {
-            result.push(path);
-        }
-    }
-    return result;
-}
-
-export interface UpdateProgressEvent {
-    progress: number;
-    type: 'query' | 'determinate';
-    title?: string;
-}
-
-export interface UpdateFileEvent {
-    type: 'file';
-    path: string;
-    diff: string;
-}
-
-export type UpdateEvent = UpdateProgressEvent | UpdateFileEvent;
-
-export interface ChangedFile {
-    absPath: string;
-    content: string;
-}
+import { promiseTimeout, readDirRecursive } from './utils';
+import { ChangedFile, FileUpdater, UpdateEvent } from './common-types';
 
 export class ProjectUpdater extends Subject<UpdateEvent> {
     protected src: string;
-    protected tsUpdater: TsUpdater;
     protected isCanceled: boolean;
     protected changedFiles: ChangedFile[];
 
-    constructor(path: string) {
+    constructor(path: string, protected updaters: FileUpdater[]) {
         super();
         this.src = resolve(path, 'src');
         if (!existsSync(this.src) || !statSync(this.src).isDirectory()) {
             this.src = resolve(path);
         }
-        this.tsUpdater = new TsUpdater();
         this.isCanceled = false;
         this.changedFiles = [];
     }
@@ -71,21 +31,21 @@ export class ProjectUpdater extends Subject<UpdateEvent> {
         });
         const files = await readDirRecursive(this.src);
         const length = files.length;
-        await promiseTimeout(1500);
+        await promiseTimeout(1000);
         for (let i = 0; i < length; i++) {
             const absPath = files[i];
+            const path = absPath.replace(this.src, '').replace(/\\/g, '/');
             const src = await readFile(absPath, 'utf-8');
             let result = src;
-            const ext = absPath.split('.').pop();
-            switch (ext) {
-                case 'ts':
-                    result = await this.tsUpdater.update(src, absPath);
-                    break;
+            for (let updater of this.updaters) {
+                if (updater.supports(path)) {
+                    await promiseTimeout(15);
+                    result = await updater.update(src, path);
+                }
             }
             if (this.isCanceled) {
                 break;
             }
-            const path = absPath.replace(this.src, '').replace(/\\/g, '/');
             this.next({
                 type: 'determinate',
                 progress: (i + 1) / length,

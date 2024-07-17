@@ -10,6 +10,8 @@
     "dependencies": {
         "rxjs": "^7.8.1",
         "ts-morph": "^23.0.0",
+        "node-html-parser": "6.1.13",
+        "detect-indent": "7.0.1",
         "tslib": "^2.3.0",
         "unidiff": "^1.0.4"
     },
