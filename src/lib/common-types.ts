@@ -4,7 +4,11 @@ import { HTMLElement } from 'node-html-parser';
 export {SourceFile} from "ts-morph";
 export {HTMLElement} from "node-html-parser";
 
-export type UpdaterPlugin<NodeType> = (node: NodeType, path: string) => NodeType | void | null;
+export interface MainUpdater {
+    addFile(absPath: string, content: string): void;
+}
+
+export type UpdaterPlugin<NodeType> = (node: NodeType, path: string, main: MainUpdater) => NodeType | void | null;
 
 export type TSUpdaterPlugin = UpdaterPlugin<SourceFile>;
 export type HTMLUpdaterPlugin = UpdaterPlugin<HTMLElement>;
@@ -12,7 +16,7 @@ export type JSONUpdaterPlugin = UpdaterPlugin<Object>;
 
 export interface FileUpdater {
     supports: (path: string) => boolean;
-    update: (src: string, path: string) => Promise<string>;
+    update: (src: string, path: string, main: MainUpdater) => Promise<string>;
 }
 
 export interface TSUpdaterContext extends FileUpdater {

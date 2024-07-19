@@ -1,5 +1,5 @@
-import { promiseTimeout, readDirRecursive } from '../utils';
-import { FileUpdater, UpdaterPlugin } from '../common-types';
+import { promiseTimeout } from '../utils';
+import { FileUpdater, MainUpdater, UpdaterPlugin } from '../common-types';
 
 export abstract class BaseUpdater<NodeType> implements FileUpdater {
 
@@ -13,11 +13,11 @@ export abstract class BaseUpdater<NodeType> implements FileUpdater {
         return path.endsWith(this.extension());
     }
 
-    async update(src: string, path: string): Promise<string> {
+    async update(src: string, path: string, main: MainUpdater): Promise<string> {
         let node = this.convertToNode(src, path);
         for (const plugin of this.plugins) {
             await promiseTimeout(5);
-            const result = plugin(node, path);
+            const result = plugin(node, path, main);
             if (result === null) {
                 return '';
             }
