@@ -1,46 +1,65 @@
-import { readFile, writeFile, unlink } from 'fs/promises';
-import { existsSync, statSync } from 'fs';
-import { resolve } from 'path';
-import { diffLines, formatLines } from 'unidiff';
+import { readFile, unlink, writeFile, stat } from 'fs/promises';
+import { resolve, dirname } from 'path';
+import { diffAsText } from 'unidiff';
 import { Subject } from 'rxjs';
 import { promiseTimeout, readDirRecursive } from './utils';
-import { ChangedFile, FileUpdater, MainUpdater, UpdateEvent } from './common-types';
+import { ProjectFile, FileUpdater, MainUpdater, UpdateEvent } from './common-types';
 
 export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater {
-    protected src: string;
-    protected isCanceled: boolean;
-    protected changedFiles: ChangedFile[];
 
-    constructor(path: string, protected updaters: FileUpdater[]) {
+    readonly path: string;
+    protected isCanceled: boolean;
+    protected projectFiles: ProjectFile[];
+    protected changedFiles: ProjectFile[];
+
+    constructor(path: string, protected updaters: FileUpdater[], protected skipDirs: string[] = ['node_modules']) {
         super();
-        this.src = resolve(path, 'src');
-        if (!existsSync(this.src) || !statSync(this.src).isDirectory()) {
-            this.src = resolve(path);
-        }
-        this.isCanceled = false;
-        this.changedFiles = [];
+        this.path = path.replace(/\\/g, '/').replace(/\/$/, '') + '/';
+        this.init();
     }
 
     async update(): Promise<void> {
-        this.isCanceled = false;
-        this.changedFiles = [];
+        this.init();
+        const stats = await stat(this.path);
+        if (!stats.isDirectory()) {
+            this.next({
+                type: 'query',
+                progress: 0,
+                title: `The path ${this.path} is not a directory.`
+            });
+            return;
+        }
         this.next({
             type: 'query',
             progress: 0,
-            title: `Processing files...`
+            title: `Initializing...`
         });
-        const files = await readDirRecursive(this.src);
+        const files = await readDirRecursive(this.path, this.skipDirs);
         const length = files.length;
+        this.next({
+            type: 'query',
+            progress: 0,
+            title: `Reading files...`
+        });
+        await promiseTimeout(250);
+        for (let i = 0; i < length; i++) {
+            const path = files[i].replace(/\\/g, '/');
+            const content = await readFile(resolve(this.path, files[i]), 'utf-8');
+            this.projectFiles.push({ path, content });
+        }
+        this.next({
+            type: 'query',
+            progress: 0,
+            title: `Updating files...`
+        });
         await promiseTimeout(500);
         for (let i = 0; i < length; i++) {
-            const absPath = files[i];
-            const path = absPath.replace(this.src, '').replace(/\\/g, '/');
-            const src = await readFile(absPath, 'utf-8');
-            let result = src;
+            const {path, content} = this.projectFiles[i];
+            let result = content;
             for (let updater of this.updaters) {
                 if (updater.supports(path)) {
                     await promiseTimeout(10);
-                    result = await updater.update(src, absPath, this);
+                    result = await updater.update(result, path, this);
                 }
             }
             if (this.isCanceled) {
@@ -51,45 +70,81 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
                 progress: (i + 1) / length,
                 title: `Updating ${path}...`
             });
-            this.addFile(absPath, result, src);
+            this.addFile(path, result);
         }
         await promiseTimeout(250);
     }
 
     cancel(): void {
-        this.isCanceled = true;
-        this.changedFiles = [];
+        this.init(true);
     }
 
-    addFile(absPath: string, content: string, original: string = ''): void {
-        const existing = this.changedFiles.find(f => f.absPath === absPath);
+    exists(path: string): boolean {
+        return this.projectFiles.some(f => f.path === path);
+    }
+
+    readDir(path: string, recursive: boolean = false): string[] {
+        return this.projectFiles.filter(f => {
+            const dir = dirname(f.path);
+            return dir === path || (recursive && dir.startsWith(path));
+        }).map(f => f.path);
+    }
+
+    readFile(path: string): string {
+        return this.projectFiles.find(f => f.path === path)?.content || '';
+    }
+
+    deleteFile(path: string) {
+        this.addFile(path, '');
+    }
+
+    addFile(path: string, content: string): void {
+        let original = this.projectFiles.find(f => f.path === path)?.content || '';
+        const existing = this.changedFiles.find(f => f.path === path);
         if (existing) {
             original = existing.content || '';
             existing.content = content;
-        } else {
-            this.changedFiles.push({ absPath, content });
         }
-        const path = absPath.replace(this.src, '').replace(/\\/g, '/');
-        const diff = formatLines(diffLines(original, content), {
-            aname: absPath,
-            bname: absPath
-        }) as string;
+        let aname = `a/${path}`;
+        let bname = `b/${path}`;
+        let diff = ``;
+        if (original !== content) {
+            let change = ``;
+            if (!original) {
+                change = `new`;
+            } else if (!content) {
+                change = `deleted`;
+            }
+            diff = (change ? `diff --git a/${path} b/${path}\n${change} file mode 100644\n` : ``)
+                + diffAsText(original, content, { aname, bname });
+        }
         if (diff.length === 0) return;
         this.next({
             type: 'file',
             path,
             diff
         });
+        if (!existing) {
+            this.changedFiles.push({ path, content });
+        }
     }
 
     async writeChanges(): Promise<void> {
+        await promiseTimeout(1500);
         for (const file of this.changedFiles) {
             await promiseTimeout(10);
+            const absPath = resolve(this.path, file.path);
             if (!file.content) {
-                await unlink(file.absPath);
+                await unlink(absPath);
                 continue;
             }
-            await writeFile(file.absPath, file.content);
+            await writeFile(absPath, file.content);
         }
+    }
+
+    protected init(canceled: boolean = false): void {
+        this.isCanceled = canceled;
+        this.projectFiles = [];
+        this.changedFiles = [];
     }
 }

@@ -8,8 +8,9 @@ export class HTMLUpdater extends BaseUpdater<HTMLElement> implements HTMLUpdater
         super(plugins)
     }
 
-    protected extension(): string {
-        return '.html';
+    protected match(): RegExp {
+        // Match both htm and html files
+        return /\.html?$/;
     }
 
     protected convertToNode(src: string): HTMLElement {

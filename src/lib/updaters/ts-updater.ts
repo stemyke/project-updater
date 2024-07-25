@@ -8,16 +8,18 @@ export class TSUpdater extends BaseUpdater<SourceFile> implements TSUpdaterConte
     constructor(plugins: TSUpdaterPlugin[]) {
         super(plugins)
         this.project = new Project({
-            skipAddingFilesFromTsConfig: true
+            skipAddingFilesFromTsConfig: true,
+            useInMemoryFileSystem: true,
         });
     }
 
-    protected extension(): string {
-        return '.ts';
+    protected match(): RegExp {
+        // Match both ts and tsx files
+        return /\.tsx?$/;
     }
 
-    protected convertToNode(_: string, path: string): SourceFile {
-        return this.project.addSourceFileAtPath(path);
+    protected convertToNode(src: string, path: string): SourceFile {
+        return this.project.createSourceFile(path, src, {overwrite: true});
     }
 
     protected convertFromNode(node: SourceFile): string {

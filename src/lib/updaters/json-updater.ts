@@ -6,12 +6,8 @@ import { getEOL } from '../utils';
 
 export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterContext {
 
-    get lastIndent(): string {
-        return this.indent;
-    }
-
-    protected indent: string;
-    protected eol: string;
+    indent: string;
+    eol: string;
 
     constructor(plugins: JSONUpdaterPlugin[]) {
         super(plugins);
@@ -19,8 +15,8 @@ export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterConte
         this.eol = EOL;
     }
 
-    protected extension(): string {
-        return '.json';
+    protected match(): RegExp {
+        return /\.json$/;
     }
 
     protected convertToNode(src: string): Object {

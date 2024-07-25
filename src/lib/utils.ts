@@ -6,19 +6,21 @@ export function promiseTimeout(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function readDirRecursive(dir: string): Promise<string[]> {
-    if (dir.endsWith('node_modules')) {
+export async function readDirRecursive(dir: string, skipDirs: string[] = [], base: string = ``): Promise<string[]> {
+    base = base || dir;
+    const dirName = dir.replace(base, '');
+    if (skipDirs.includes(dirName)) {
         return [];
     }
     const files = await readdir(dir);
     const result: string[] = [];
     for (const file of files) {
-        const path = join(dir, file);
+        const path = join(dir, file).replace(/\\/g, '/');
         const fileStat = await stat(path);
         if (fileStat.isDirectory()) {
-            result.push(...(await readDirRecursive(path)));
+            result.push(...(await readDirRecursive(path, skipDirs, base)));
         } else {
-            result.push(path);
+            result.push(path.replace(base, ''));
         }
     }
     return result;
