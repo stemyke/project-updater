@@ -58,10 +58,11 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
             let result = content;
             for (let updater of this.updaters) {
                 if (updater.supports(path)) {
-                    await promiseTimeout(10);
                     result = await updater.update(result, path, this);
+                    break;
                 }
             }
+            await promiseTimeout(10);
             if (this.isCanceled) {
                 break;
             }

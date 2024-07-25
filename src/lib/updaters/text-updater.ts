@@ -13,7 +13,8 @@ export class TextUpdater extends BaseUpdater<string[]> implements TextUpdaterCon
     }
 
     protected match(): RegExp {
-        return /./;
+        // Match txt files or files without extension
+        return /((\.(browserlistrc|editorconfig|gitignore|yml|yaml|npmrc|nvmrc|js|mjs|md|txt))|(^[^.]*))$/;
     }
 
     protected convertToNode(src: string): string[] {
