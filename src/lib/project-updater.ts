@@ -1,4 +1,4 @@
-import { readFile, unlink, writeFile, stat } from 'fs/promises';
+import { readFile, unlink, writeFile, stat, mkdir } from 'fs/promises';
 import { resolve, dirname } from 'path';
 import { diffAsText } from 'unidiff';
 import { Subject } from 'rxjs';
@@ -135,6 +135,12 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
         for (const file of this.changedFiles) {
             await promiseTimeout(10);
             const absPath = resolve(this.path, file.path);
+            // Ensure directory exists
+            const dir = dirname(absPath);
+            const stats = await stat(dir).catch(() => null);
+            if (!stats?.isDirectory()) {
+                await mkdir(dir, { recursive: true });
+            }
             if (!file.content) {
                 await unlink(absPath);
                 continue;
