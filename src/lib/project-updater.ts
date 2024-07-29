@@ -34,46 +34,16 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
             progress: 0,
             title: `Initializing...`
         });
-        const files = await readDirRecursive(this.path, this.skipDirs);
-        const length = files.length;
-        this.next({
-            type: 'query',
-            progress: 0,
-            title: `Reading files...`
-        });
-        await promiseTimeout(250);
-        for (let i = 0; i < length; i++) {
-            const path = files[i].replace(/\\/g, '/');
-            const content = await readFile(resolve(this.path, files[i]), 'utf-8');
-            this.projectFiles.push({ path, content });
-        }
-        this.next({
-            type: 'query',
-            progress: 0,
-            title: `Updating files...`
-        });
-        await promiseTimeout(500);
-        for (let i = 0; i < length; i++) {
-            const {path, content} = this.projectFiles[i];
-            let result = content;
-            for (let updater of this.updaters) {
-                if (updater.supports(path)) {
-                    result = await updater.update(result, path, this);
-                    break;
-                }
-            }
-            await promiseTimeout(10);
-            if (this.isCanceled) {
-                break;
-            }
+        try {
+            await this.updateFiles();
+        } catch (e) {
             this.next({
-                type: 'determinate',
-                progress: (i + 1) / length,
-                title: `Updating ${path}...`
+                type: 'query',
+                progress: 0,
+                title: `An error occurred. ${e}`
             });
-            this.addFile(path, result);
+            this.init();
         }
-        await promiseTimeout(250);
     }
 
     cancel(): void {
@@ -146,6 +116,48 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
                 continue;
             }
             await writeFile(absPath, file.content);
+        }
+    }
+
+    protected async updateFiles(): Promise<void> {
+        const files = await readDirRecursive(this.path, this.skipDirs);
+        const length = files.length;
+        this.next({
+            type: 'query',
+            progress: 0,
+            title: `Reading files...`
+        });
+        await promiseTimeout(250);
+        for (let i = 0; i < length; i++) {
+            const path = files[i].replace(/\\/g, '/');
+            const content = await readFile(resolve(this.path, files[i]), 'utf-8');
+            this.projectFiles.push({ path, content });
+        }
+        this.next({
+            type: 'query',
+            progress: 0,
+            title: `Updating files...`
+        });
+        await promiseTimeout(250);
+        for (let i = 0; i < length; i++) {
+            const {path, content} = this.projectFiles[i];
+            let result = content;
+            for (let updater of this.updaters) {
+                if (updater.supports(path)) {
+                    result = await updater.update(result, path, this);
+                    break;
+                }
+            }
+            await promiseTimeout(2);
+            if (this.isCanceled) {
+                break;
+            }
+            this.next({
+                type: 'determinate',
+                progress: (i + 1) / length,
+                title: `Updating ${path}...`
+            });
+            this.addFile(path, result);
         }
     }
 
