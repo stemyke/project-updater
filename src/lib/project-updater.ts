@@ -36,6 +36,11 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
         });
         try {
             await this.updateFiles();
+            this.next({
+                type: 'query',
+                progress: 1000,
+                title: `Update finished.`
+            });
         } catch (e) {
             this.next({
                 type: 'query',
