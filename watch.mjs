@@ -7,9 +7,9 @@ import watch from 'node-watch';
 import {copy} from './copy.mjs';
 
 program
-    .version('0.0.2', '-v, --version')
+    .version('0.1.8', '-v, --version')
     .option('-b, --skip-build', 'Skip first build')
-    .option('-m, --skip-modules', 'Skip copying node modules to project')
+    .option('-m, --modules', 'Copy node modules to project')
     .option('-p, --project [path]', 'Project path where "project-updater" is used')
     .parse(process.argv);
 
@@ -22,11 +22,11 @@ let deploy = null;
 
 function deployToProject() {
     if (noProject) return;
-    const metrixPath = join(projectPath, 'node_modules', '@stemy');
-    const distPath = join(metrixPath, 'dist');
+    const ownerPath = join(projectPath, 'node_modules', '@stemy');
+    const distPath = join(ownerPath, 'dist');
     deploy = copy('./dist/**', distPath, 'dist folder to project');
     return deploy.then(() => {
-        const targetPath = join(metrixPath, 'project-updater');
+        const targetPath = join(ownerPath, 'project-updater');
         if (existsSync(targetPath)) {
             deleteSync(targetPath, {force: true});
         }
@@ -61,6 +61,6 @@ function build(cb = new Function("void 0")) {
 build(async () => {
     console.log('Watching for file changes started.');
     watch('./src', {delay: 1000, recursive: true, filter: /\.(json|html|scss|ts)$/}, () => build());
-    if (options.skipModules) return;
+    if (!options.modules) return;
     await copy('./node_modules/**', join(projectPath, 'node_modules'), `node modules to project: ${projectPath}`);
 });
