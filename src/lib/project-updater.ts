@@ -104,7 +104,6 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
         await promiseTimeout(1500);
         for (const file of this.projectFiles) {
             if (file.previous === file.current) continue;
-            console.log(file.path, file.current);
             await promiseTimeout(10);
             const absPath = resolve(this.path, file.path);
             // Ensure directory exists
