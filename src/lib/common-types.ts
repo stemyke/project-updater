@@ -57,5 +57,6 @@ export type UpdateEvent = UpdateProgressEvent | UpdateFileEvent;
 
 export interface ProjectFile {
     path: string;
-    content: string;
+    previous: string;
+    current: string;
 }
