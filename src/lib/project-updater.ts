@@ -78,7 +78,7 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
         if (!file) {
             file = {path, previous: '', current: content};
             this.projectFiles.push(file);
-        } else {
+        } else if (file.current !== content) {
             file.previous = file.current;
             file.current = content;
         }
@@ -104,6 +104,7 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
         await promiseTimeout(1500);
         for (const file of this.projectFiles) {
             if (file.previous === file.current) continue;
+            console.log(file.path, file.current);
             await promiseTimeout(10);
             const absPath = resolve(this.path, file.path);
             // Ensure directory exists
