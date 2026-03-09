@@ -46,6 +46,7 @@ export class ProjectUpdater extends Subject<UpdateEvent> implements MainUpdater 
                 progress: 0,
                 title: `An error occurred. ${e}`
             });
+            console.warn(e);
             this.init();
         }
     }

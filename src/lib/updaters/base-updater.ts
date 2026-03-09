@@ -20,7 +20,6 @@ export abstract class BaseUpdater<NodeType> implements FileUpdater {
         );
         let node = this.convertToNode(src, path);
         for (const plugin of this.plugins) {
-            await promiseTimeout(5);
             const result = plugin(node, path, main);
             if (result === null) {
                 return '';
