@@ -1,5 +1,5 @@
 import { EOL } from 'os';
-import * as json5 from 'json5';
+import json5 from 'json5';
 import detectIndent from 'detect-indent';
 import { BaseUpdater } from './base-updater';
 import { JSONUpdaterContext, JSONUpdaterPlugin } from '../common-types';
