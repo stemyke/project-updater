@@ -1,6 +1,6 @@
 {
     "name": "@stemy/project-updater",
-    "version": "0.2.3",
+    "version": "0.3.0",
     "license": "MIT",
     "scripts": {
         "build": "nx build",
@@ -13,7 +13,8 @@
         "node-html-parser": "6.1.13",
         "detect-indent": "7.0.1",
         "tslib": "^2.3.0",
-        "unidiff": "^1.0.4"
+        "unidiff": "^1.0.4",
+        "json5": "^2.2.3"
     },
     "devDependencies": {
         "@nx/eslint": "19.4.4",

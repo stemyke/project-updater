@@ -1,4 +1,5 @@
 import { EOL } from 'os';
+import { parse } from 'json5';
 import detectIndent from 'detect-indent';
 import { BaseUpdater } from './base-updater';
 import { JSONUpdaterContext, JSONUpdaterPlugin } from '../common-types';
@@ -22,7 +23,7 @@ export class JSONUpdater extends BaseUpdater<Object> implements JSONUpdaterConte
     protected convertToNode(src: string): Object {
         this.indent = detectIndent(src).indent || this.indent;
         this.eol = getEOL(src);
-        return JSON.parse(src);
+        return parse(src);
     }
 
     protected convertFromNode(node: Object): string {
